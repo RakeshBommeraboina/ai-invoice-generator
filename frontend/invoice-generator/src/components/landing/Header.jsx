@@ -29,18 +29,18 @@ const Header = () => {
         isScrolled ? "bg-white/95 backdrop-blur-sm shadow-lg" : "bg-white/0"
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 lg:h-20">
+      <div className="max-w-full mx-auto px-10 sm:px-6 lg:px-10">
+        <div className="flex items-center justify-between h-30 lg:h-30">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-blue-900 rounded-md flex items-center justify-center">
               <FileText className="w-4 h-4 text-white" />
             </div>
-            <span className="text-xl font-bold text-gray-900">
+            <span className="text-3xl font-bold text-gray-900">
               AI Invoice App
             </span>
           </div>
           <div className="hidden lg:flex lg:items-center lg:space-x-8">
-            <a
+            {/* <a
               href="#features"
               className="text-gray-600 hover:text-gray-900 font-medium transition-colors duration-200 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-black after:transition-all hover:after:w-full"
             >
@@ -52,12 +52,12 @@ const Header = () => {
             >
               Testimonials
             </a>
-            <a
+          {/*  <a
               href="#faq"
               className="text-gray-600 hover:text-gray-900 font-medium transition-colors duration-200 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-black after:transition-all hover:after:w-full"
             >
-              FAQ
-            </a>
+              How It Works
+            </a> */}
           </div>
           <div className="hidden lg:flex items-center space-x-4">
             {isAuthenticated ? (
@@ -123,7 +123,7 @@ const Header = () => {
               href="#faq"
               className="block px-4 py-3 text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium transition-colors duration-200"
             >
-              FAQ
+              How
             </a>
             <div className="border-t border-gray-200 my-2"></div>
             {isAuthenticated ? (

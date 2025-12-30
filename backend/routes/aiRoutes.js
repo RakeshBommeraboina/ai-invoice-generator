@@ -1,11 +1,17 @@
 const express = require("express");
-const { parseInvoiceFromText, generateReminderEmail, getDashboardSummary } = require("../controllers/aiController.js");
+const {
+  parseInvoiceFromText,
+  generateReminderEmail,
+  sendReminderEmail,
+  getDashboardSummary,
+} = require("../controllers/aiController.js");
 const { protect } = require("../middlewares/authMiddleware.js");
 
 const router = express.Router();
 
 router.post("/parse-text", protect, parseInvoiceFromText);
 router.post("/generate-reminder", protect, generateReminderEmail);
+router.post("/send-reminder", protect, sendReminderEmail);
 router.get("/dashboard-summary", protect, getDashboardSummary);
 
 module.exports = router;

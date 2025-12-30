@@ -4,7 +4,7 @@ const Invoice = require("../models/Invoice");
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
 // ---------- Parse Invoice From Text ----------
-const parseInvoiceFromText = async (req, res) => {
+ const parseInvoiceFromText = async (req, res) => {
   const { text } = req.body;
   if (!text) {
     return res.status(400).json({ message: "Text is required" });
@@ -90,47 +90,105 @@ const generateReminderEmail = async (req, res) => {
       return res.status(404).json({ message: "Invoice not found" });
     }
 
-    const prompt = `
-You are a polite accounting assistant. Write a friendly payment reminder email.
+    const user = req.user; // assuming auth middleware sets req.user
 
-Details:
+    const prompt = `
+You are an expert HTML email generator for invoices.
+
+TASK:
+Generate a PAYMENT REMINDER email in HTML format ONLY. 
+- Do NOT include markdown, backticks, plain text, or explanations.
+- Keep it professional and friendly.
+- Include client name, invoice number, amount due, due date, business name, and phone number.
+- Make sure it is valid HTML ready to be sent as an email.
+- Use a simple layout with header, body message, and footer.
+
+Dynamic Values:
 - Client Name: ${invoice.billTo.clientName}
 - Invoice Number: ${invoice.invoiceNumber}
-- Amount Due: ${invoice.total.toFixed(2)}
+- Amount Due: ₹${invoice.total.toFixed(2)}
 - Due Date: ${new Date(invoice.dueDate).toLocaleDateString()}
+- Business Name: ${user.businessName || "N/A"}
+- Phone: ${user.phone || "N/A"}
+`;
 
-Keep it short and professional. Start with "Subject:".
-    `;
-
-    const response = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "openai/gpt-4o-mini",
-          messages: [{ role: "user", content: prompt }],
-          max_tokens: 256,
-          temperature: 0.7,
-        }),
-      }
-    );
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "openai/gpt-4o-mini",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 800,
+        temperature: 0.3,
+      }),
+    });
 
     const data = await response.json();
-    const reminderText = data.choices?.[0]?.message?.content || "";
+    const html = data.choices?.[0]?.message?.content || "";
+    console.log("🧠 AI Generated HTML:", html);
 
-    res.status(200).json({ reminderText });
+    // Safety check: Ensure we got valid HTML
+    if (!html.includes("<html") || !html.includes("</html>")) {
+      throw new Error("AI did not return valid HTML");
+    }
+
+    res.status(200).json({ html }); // return only HTML
   } catch (error) {
     console.error("Error generating reminder email with AI:", error);
-    res
-      .status(500)
-      .json({
-        message: "Failed to generate reminder email.",
-        details: error.message,
-      });
+    res.status(500).json({
+      message: "Failed to generate reminder email.",
+      details: error.message,
+    });
+  }
+};
+
+// ---------- Send Reminder Email ----------
+const sendReminderEmail = async (req, res) => {
+  const { invoiceId, reminderText } = req.body;
+  console.log("Reminder Text:", reminderText);
+
+  if (!invoiceId || !reminderText) {
+    return res
+      .status(400)
+      .json({ message: "Invoice ID and reminder text are required" });
+  }
+
+  try {
+    const invoice = await Invoice.findById(invoiceId);
+    if (!invoice) {
+      return res.status(404).json({ message: "Invoice not found" });
+    }
+
+    // Check if the invoice belongs to the user
+    if (invoice.user.toString() !== req.user.id) {
+      return res.status(401).json({ message: "Not authorized" });
+    }
+
+    if (!invoice.billTo || !invoice.billTo.email) {
+      return res.status(400).json({ message: "BillTo email not available" });
+    }
+
+    const { sendEmail } = require("../controllers/sendEmailController");
+
+    const mailOptions = {
+      from: "aiinvoicegen@gmail.com",
+      to: invoice.billTo.email,
+      subject: `Payment Reminder for Invoice ${invoice.invoiceNumber}`,
+      html: reminderText, // Use the provided reminder text as HTML
+    };
+
+    await sendEmail(mailOptions);
+
+    res.status(200).json({ message: "Reminder email sent successfully" });
+  } catch (error) {
+    console.error("Error sending reminder email:", error);
+    res.status(500).json({
+      message: "Failed to send reminder email.",
+      details: error.message,
+    });
   }
 };
 
@@ -140,11 +198,9 @@ const getDashboardSummary = async (req, res) => {
     const invoices = await Invoice.find({ user: req.user.id });
 
     if (invoices.length === 0) {
-      return res
-        .status(200)
-        .json({
-          insights: ["No invoice data available to generate insights."],
-        });
+      return res.status(200).json({
+        insights: ["No invoice data available to generate insights."],
+      });
     }
 
     const totalInvoices = invoices.length;
@@ -245,5 +301,6 @@ ${dataSummary}
 module.exports = {
   parseInvoiceFromText,
   generateReminderEmail,
+  sendReminderEmail,
   getDashboardSummary,
 };

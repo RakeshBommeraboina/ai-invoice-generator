@@ -72,18 +72,18 @@ const Footer = () => {
           </div>
         </div>
         <div className="border-t border-gray-800 py-8 mt-16">
-          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <p className="text-gray-400">
+          <div className="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0">
+            {/* <p className="text-gray-400 ">
               &copy; 2025 AI Invoice App. All rights reserved.
-            </p>
+            </p> */}
             <div className="flex space-x-4">
-              <SocialLink href="#">
+              <SocialLink href="https://x.com/iraqesh">
                 <Twitter className="w-5 h-5" />
               </SocialLink>
-              <SocialLink href="#">
+              <SocialLink href="https://github.com/RakeshBommeraboina">
                 <Github className="w-5 h-5" />
               </SocialLink>
-              <SocialLink href="#">
+              <SocialLink href="https://www.linkedin.com/in/iraqesh/">
                 <Linkedin className="w-5 h-5" />
               </SocialLink>
             </div>

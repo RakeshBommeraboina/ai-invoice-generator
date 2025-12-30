@@ -1,14 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { Loader2, Mail, Copy, Check } from 'lucide-react';
-import Button from '../ui/Button';
-import TextareaField from '../ui/TextareaField';
-import axiosInstance from '../../utils/axiosInstance';
-import { API_PATHS } from '../../utils/apiPaths';
-import toast from 'react-hot-toast';
+import React, { useState, useEffect } from "react";
+import { Loader2, Mail, Copy, Check } from "lucide-react";
+import Button from "../ui/Button";
+import TextareaField from "../ui/TextareaField";
+import axiosInstance from "../../utils/axiosInstance";
+import { API_PATHS } from "../../utils/apiPaths";
+import toast from "react-hot-toast";
 
-const ReminderModal = ({isOpen, onClose, invoiceId}) => {
-
-  const [reminderText, setReminderText] = useState('');
+const ReminderModal = ({ isOpen, onClose, invoiceId }) => {
+  const [reminderText, setReminderText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [hasCopied, setHasCopied] = useState(false);
 
@@ -16,13 +15,17 @@ const ReminderModal = ({isOpen, onClose, invoiceId}) => {
     if (isOpen && invoiceId) {
       const generateReminder = async () => {
         setIsLoading(true);
-        setReminderText('');
+        setReminderText("");
         try {
-          const response = await axiosInstance.post(API_PATHS.AI.GENERATE_REMINDER, { invoiceId });
-          setReminderText(response.data.reminderText);
+          const response = await axiosInstance.post(
+            API_PATHS.AI.GENERATE_REMINDER,
+            { invoiceId }
+          );
+          console.log("AI reminder response:", response.data);
+          setReminderText(response.data.html);
         } catch (error) {
-          toast.error('Failed to generate reminder.');
-          console.error('AI reminder error:', error);
+          toast.error("Failed to generate reminder.");
+          console.error("AI reminder error:", error);
           onClose();
         } finally {
           setIsLoading(false);
@@ -32,27 +35,42 @@ const ReminderModal = ({isOpen, onClose, invoiceId}) => {
     }
   }, [isOpen, invoiceId, onClose]);
 
-  const handleCopyToClipboard = () => {
-    navigator.clipboard.writeText(reminderText);
-    setHasCopied(true);
-    toast.success('Reminder copied to clipboard!');
-    setTimeout(() => setHasCopied(false), 2000);
+  const handleSendEmail = async () => {
+    try {
+      await axiosInstance.post(API_PATHS.AI.SEND_REMINDER, {
+        invoiceId,
+        reminderText,
+      });
+      toast.success("Reminder email sent successfully!");
+      onClose();
+    } catch (error) {
+      toast.error("Failed to send reminder email.");
+      console.error("Send reminder error:", error);
+    }
   };
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
-     <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-4 text-center">
-        <div className="fixed inset-0 bg-black/10 bg-opacity-50 transition-opacity" onClick={onClose}></div>
-        
+        <div
+          className="fixed inset-0 bg-black/10 bg-opacity-50 transition-opacity"
+          onClick={onClose}
+        ></div>
+
         <div className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6 relative text-left transform transition-all">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-slate-900 flex items-center">
               <Mail className="w-5 h-5 mr-2 text-blue-900" />
               AI-Generated Reminder
             </h3>
-            <button onClick={onClose} className="text-slate-400 hover:text-slate-600">&times;</button>
+            <button
+              onClick={onClose}
+              className="text-slate-400 hover:text-slate-600"
+            >
+              &times;
+            </button>
           </div>
 
           {isLoading ? (
@@ -61,7 +79,7 @@ const ReminderModal = ({isOpen, onClose, invoiceId}) => {
             </div>
           ) : (
             <div className="space-y-4">
-              <TextareaField 
+              <TextareaField
                 name="reminderText"
                 value={reminderText}
                 readOnly
@@ -71,15 +89,21 @@ const ReminderModal = ({isOpen, onClose, invoiceId}) => {
           )}
 
           <div className="flex justify-end space-x-3 mt-6">
-            <Button variant="secondary" onClick={onClose}>Close</Button>
-            <Button onClick={handleCopyToClipboard} icon={hasCopied ? Check : Copy} disabled={isLoading}>
-              {hasCopied ? 'Copied!' : 'Copy Text'}
+            <Button variant="secondary" onClick={onClose}>
+              Close
+            </Button>
+            <Button
+              onClick={handleSendEmail}
+              disabled={isLoading || !reminderText}
+            >
+              <Mail className="w-4 h-4 mr-2" />
+              Send Email
             </Button>
           </div>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ReminderModal
+export default ReminderModal;
