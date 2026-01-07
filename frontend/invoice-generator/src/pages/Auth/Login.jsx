@@ -112,7 +112,7 @@ const Login = () => {
 
           // Redirect based on role
           setTimeout(() => {
-            window.location.href = "/dashboard";
+            navigate("/dashboard");
           }, 2000);
         }
       } else {
