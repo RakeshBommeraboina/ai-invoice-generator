@@ -14,7 +14,7 @@ const app = express();
 app.use(
   cors({
     origin: [
-      "https://ai-invoice-generator-teal.vercel.app/", // Your Vercel URL
+      "https://ai-invoice-generator-teal.vercel.app", // Your Vercel URL
       "http://localhost:5173" // For local development
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
