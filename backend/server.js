@@ -20,15 +20,30 @@ app.use(
 );
 
 // Connect Database
-connectDB();
 
 // Middleware
 app.use(express.json());
+
+connectDB();
 
 // Routes Here
 app.use("/api/auth", authRoutes);
 app.use("/api/invoices", invoiceRoutes);
 app.use("/api/ai", aiRoutes);
+
+// --- 2. SERVE STATIC FILES ---
+const __dirname1 = path.resolve();
+const frontendDistPath = path.join(__dirname1, "../frontend/dist");
+
+app.use(express.static(frontendDistPath));
+
+// --- 3. CATCH-ALL ROUTE (Fixed for Express 5) ---
+// We use /(.*)/ instead of "*" because newer Express versions don't support "*"
+app.get(/(.*)/, (req, res) => {
+    res.sendFile(path.join(frontendDistPath, "index.html"));
+});
+
+
 
 // Start Server
 const PORT = process.env.PORT || 5000;

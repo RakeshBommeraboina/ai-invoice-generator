@@ -1,13 +1,18 @@
-const fetch = require("node-fetch");
 const Invoice = require("../models/Invoice");
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+console.log("🔑 Loaded API Key:", OPENROUTER_API_KEY );
 
 // ---------- Parse Invoice From Text ----------
  const parseInvoiceFromText = async (req, res) => {
   const { text } = req.body;
   if (!text) {
     return res.status(400).json({ message: "Text is required" });
+  }
+
+  if (!OPENROUTER_API_KEY) {
+    console.error("❌ Missing OPENROUTER_API_KEY in .env");
+    return res.status(500).json({ message: "Server configuration error: API Key missing" });
   }
 
   try {
@@ -52,7 +57,19 @@ Return ONLY the JSON. No extra text.
       }
     );
 
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ OpenRouter API Error: ${response.status}`, errorText);
+      throw new Error(`AI Provider returned status ${response.status}: ${errorText}`);
+    }
+
     const data = await response.json();
+
+    if (!data.choices || !data.choices.length) {
+      console.error("❌ Invalid API Response Structure:", JSON.stringify(data));
+      throw new Error("AI did not return any choices.");
+    }
+
     const responseText = data.choices?.[0]?.message?.content || "";
 
     let parsedData;
@@ -96,7 +113,8 @@ const generateReminderEmail = async (req, res) => {
 You are an expert HTML email generator for invoices.
 
 TASK:
-Generate a PAYMENT REMINDER email in HTML format ONLY. 
+Generate a complete PAYMENT REMINDER email in HTML format. 
+- Include <!DOCTYPE html>, <html>, <head>, and <body> tags.
 - Do NOT include markdown, backticks, plain text, or explanations.
 - Keep it professional and friendly.
 - Include client name, invoice number, amount due, due date, business name, and phone number.
@@ -125,6 +143,11 @@ Dynamic Values:
         temperature: 0.3,
       }),
     });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`AI API Error: ${response.status} - ${errorText}`);
+    }
 
     const data = await response.json();
     const html = data.choices?.[0]?.message?.content || "";
