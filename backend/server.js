@@ -1,49 +1,48 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const path = require("path");
 const connectDB = require("./config/db");
 
-const authRoutes = require('./routes/authRoutes')
-const invoiceRoutes = require('./routes/invoiceRoutes')
-const aiRoutes = require('./routes/aiRoutes')
+const authRoutes = require('./routes/authRoutes');
+const invoiceRoutes = require('./routes/invoiceRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 const app = express();
 
 // Middleware to handle CORS
+// Update "origin" to include your Vercel URL for security
 app.use(
   cors({
-    origin: "*",
+    origin: [
+      "https://ai-invoice-generator-teal.vercel.app/", // Your Vercel URL
+      "http://localhost:5173" // For local development
+    ],
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true 
   })
 );
-
-// Connect Database
 
 // Middleware
 app.use(express.json());
 
+// Connect Database
 connectDB();
 
-// Routes Here
+// API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/invoices", invoiceRoutes);
 app.use("/api/ai", aiRoutes);
 
-// --- 2. SERVE STATIC FILES ---
-const __dirname1 = path.resolve();
-const frontendDistPath = path.join(__dirname1, "../frontend/dist");
-
-app.use(express.static(frontendDistPath));
-
-// --- 3. CATCH-ALL ROUTE (Fixed for Express 5) ---
-// We use /(.*)/ instead of "*" because newer Express versions don't support "*"
-app.get(/(.*)/, (req, res) => {
-    res.sendFile(path.join(frontendDistPath, "index.html"));
+// --- 404/Home Route Fix ---
+// Since we removed the frontend static files, add a simple message for the root URL
+// so you don't see "Cannot GET /" when visiting the Render URL.
+app.get("/", (req, res) => {
+  res.send("Backend is running successfully! Use the frontend on Vercel to access the app.");
 });
 
-
+// REMOVED: All code related to serving "frontend/dist"
+// The lines causing the crash have been deleted.
 
 // Start Server
 const PORT = process.env.PORT || 5000;
